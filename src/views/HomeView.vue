@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import axios from 'axios'
 import Header from '../components/Header.vue';
 
 const todos = ref([])
@@ -10,51 +11,80 @@ const status = ref('new')
 const description = ref('')
 
 const todos_asc = computed(() => todos.value.sort((a, b) => {
-  return a.createdAt - b.createdAt
+  return a.created - b.created
 }))
 
 const isEdit = computed(() => {
   return form_state.value === 'edit' ?? false;
 })
 
-//Start of cycle
+//component mounted
 onMounted(() => {
-  todos.value = JSON.parse(localStorage.getItem('todos')) || []
+  getTodos()
 })
 
 //Add todo to todos array
-const addTodo = () => {
+const addTodo = async () => {
   if (task.value.trim() === '' || status.value.trim() == '') {
     return
   }
 
-  if(form_state.value == 'create') {
+  await axios.post('http://localhost:5000/api/Todo',{
+    task: task.value.trim(),
+    description: description.value.trim(),
+  })
+  .then(res => {
     todos.value.push({
       id: new Date().getTime(),
       task: task.value.trim(),
       status: 'new',
       description: description.value.trim(),
-      createdAt: new Date().getTime()
+      created: new Date().getTime()
     })
-  } else {
+    cancelEdit()
+  })
+  .catch(err => {
+    console.log("message", err.message)
+    console.log("response", err.response)
+    console.log("request", err.request)
+    alert('Failed to add todo')
+  })
+}
+
+const updateTodo = async(todo) => {
+  await axios.put(`http://localhost:5000/api/Todo/${id.value}`, {
+    task: task.value.trim(),
+    description: description.value.trim(),
+    status: status.value,
+  })
+  .then(res => {
     todos.value = todos.value.filter((t) => t.id !== id.value)
     todos.value.push({
-      id: id.value,
       task: task.value.trim(),
       status: status.value,
       description: description.value.trim(),
-      createdAt: new Date().getTime()
     })
-  }
-  id.value = ''
-  task.value = ''
-  status.value = ''
-  description.value = ''
-  form_state.value = "create"
+    cancelEdit()
+  })
+  .catch(err => {
+    console.log("message",err.message)
+    console.log("response",err.response)
+    console.log("request",err.request)
+    alert('Failed to update')
+  })
 }
 
-const removeTodo = (todo) => {
-  todos.value = todos.value.filter((t) => t !== todo)
+const removeTodo = async (todo) => {
+  await axios.delete(`http://localhost:5000/api/Todo/${todo.id}`)
+  .then(res => {
+    todos.value = todos.value.filter((t) => t !== todo)
+  })
+  .catch(err => {
+    console.log("message", err.message)
+    console.log("response", err.response)
+    console.log("request", err.request)
+    alert('Failed to delete')
+  })
 }
 
 const editTodo = (todo) => {
@@ -63,6 +93,20 @@ const editTodo = (todo) => {
   task.value = todo.task
   description.value = todo.description
   status.value = todo.status
+}
+
+const cancelEdit = () => {
+  form_state.value = "create"
+  id.value = ''
+  task.value = ''
+  description.value = ''
+  status.value = ''
+}
+
+const getTodos = async () => {
+  await axios.get('http://localhost:5000/api/Todo', {
+    "Access-Control-Allow-Origin": "*"
+  }).then(res => todos.value = res.data)
 }
 
 //Check for any change to todos
@@ -104,14 +148,16 @@ watch(todos, (newTodos) => {
             </select>
           </div>
           <div class="w-3/5 mx-auto">
-            <button class="w-full rounded-md px-5 py-2 mx-3 bg-green-600 text-gray-200">{{ IsEdit === true ? 'Update' : 'Save' }}</button>
+            <button v-show="!isEdit" type="submit" class="w-full rounded-md px-5 py-2 mx-3 bg-green-600 text-gray-200 mb-6">Save</button>
+            <button v-show="isEdit" type="button" @click="updateTodo()" class="w-full rounded-md px-5 py-2 mx-3 bg-orange-300 text-orange-800 mb-6">Update</button>
+            <button v-show="isEdit" type="button" @click="cancelEdit()" class="w-full rounded-md px-5 py-2 mx-3 bg-gray-300 text-gray-800 mb-6">Cancel</button>
           </div>
         </form>
       </div>
       <div class="w-3/5 mx-auto items-center px-5 py-3">
         <h3 class="font-semibold text-2xl mb-6">Task List</h3>
         <div v-for="todo in todos_asc"
-          :class="`w-full px-6 py-2 mb-6 mx-auto rounded-lg items-center bg-white rounded-mb ${todo.status === 'done' ? 'bg-green-200 text-green-800' : (todo.status === 'in-progress' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800')}`"
+          :class="`w-full px-6 py-2 mb-6 mx-auto rounded-lg items-center bg-white rounded-mb ${todo.status === 'done' ? 'bg-green-300 text-green-800' : (todo.status === 'in-progress' ? 'bg-yellow-300 text-yellow-800' : 'bg-gray-300 text-gray-800')}`"
           @dblclick="removeTodo(todo)"
         >
         <div class="flex items-center">
