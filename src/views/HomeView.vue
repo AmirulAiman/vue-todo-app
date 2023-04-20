@@ -51,6 +51,7 @@ const addTodo = async () => {
   })
 }
 
+//NOTE: Need to recheck again, cannot submit request
 const updateTodo = async(todo) => {
   await axios.put(`http://localhost:5000/api/Todo/${id.value}`, {
     task: task.value.trim(),
