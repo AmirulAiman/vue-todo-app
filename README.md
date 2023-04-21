@@ -1,4 +1,5 @@
-# view
+# VueJS Todo App
+The front-end for this [.Net api endpoint](https://github.com/AmirulAiman/dot-net_todoapp_api)
 
 This template should help get you started developing with Vue 3 in Vite.
 
