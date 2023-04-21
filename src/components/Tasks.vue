@@ -1,5 +1,10 @@
 <script setup>
-
+    definePropss({
+        tasks: {
+            type: Array,
+            required: true
+        }
+    })
 </script>
 
 <template>

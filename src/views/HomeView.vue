@@ -51,16 +51,19 @@ const addTodo = async () => {
   })
 }
 
-//NOTE: Need to recheck again, cannot submit request
-const updateTodo = async(todo) => {
+//Save update
+const updateTodo = async() => {
   await axios.put(`http://localhost:5000/api/Todo/${id.value}`, {
+    id: id.value,
     task: task.value.trim(),
     description: description.value.trim(),
     status: status.value,
+    updated: new Date()
   })
   .then(res => {
     todos.value = todos.value.filter((t) => t.id !== id.value)
     todos.value.push({
+      id: id.value,
       task: task.value.trim(),
       status: status.value,
       description: description.value.trim(),
@@ -75,6 +78,7 @@ const updateTodo = async(todo) => {
   })
 }
 
+//Delete todo
 const removeTodo = async (todo) => {
   await axios.delete(`http://localhost:5000/api/Todo/${todo.id}`)
   .then(res => {
@@ -88,6 +92,7 @@ const removeTodo = async (todo) => {
   })
 }
 
+//Edit todo
 const editTodo = (todo) => {
   form_state.value = "edit"
   id.value = todo.id
@@ -104,6 +109,7 @@ const cancelEdit = () => {
   status.value = ''
 }
 
+//Fetch all todos
 const getTodos = async () => {
   await axios.get('http://localhost:5000/api/Todo', {
     "Access-Control-Allow-Origin": "*"
@@ -118,12 +124,10 @@ watch(todos, (newTodos) => {
 </script>
 
 <template>
-  <div class="h-full">
-    <div class="rounded-sm px-5 py-2 mx-auto">
-      <Header title="Todos" />
-    </div>
-    <div class="container shadow-md">
+  <div class="h-screen">
+    <div class="">
       <div class="w-3/5 mx-auto">
+        <Header title="Todos App"/>
         <form class="mb-6 flex-col items-center" @submit.prevent="addTodo">
           <input type="hidden" name="id" v-model="id">
           <input 
@@ -156,7 +160,7 @@ watch(todos, (newTodos) => {
         </form>
       </div>
       <div class="w-3/5 mx-auto items-center px-5 py-3">
-        <h3 class="font-semibold text-2xl mb-6">Task List</h3>
+        <Header title="Task List"/>
         <div v-for="todo in todos_asc"
           :class="`w-full px-6 py-2 mb-6 mx-auto rounded-lg items-center bg-white rounded-mb ${todo.status === 'done' ? 'bg-green-300 text-green-800' : (todo.status === 'in-progress' ? 'bg-yellow-300 text-yellow-800' : 'bg-gray-300 text-gray-800')}`"
           @dblclick="removeTodo(todo)"
